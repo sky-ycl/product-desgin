@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日迹 - 交互原型</title>
+  <style>
+    :root {
+      --red: #ff2442;
+      --ink: #151515;
+      --muted: #858585;
+      --line: #ececec;
+      --soft: #f7f7f7;
+      --green: #25a66a;
+      --wechat: #07c160;
+      --shadow: 0 18px 48px rgba(0, 0, 0, .14)
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef0f2;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+      letter-spacing: 0
+    }
+
+    button {
+      cursor: pointer
+    }
+
+    .device {
+      width: 390px;
+      height: min(844px, calc(100vh - 40px));
+      min-height: 680px;
+      background: #fff;
+      border: 1px solid #d4d4d4;
+      border-radius: 30px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow)
+    }
+
+    .status {
+      height: 31px;
+      padding: 10px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      background: #fff;
+      position: relative;
+      z-index: 20
+    }
+
+    .screen {
+      position: absolute;
+      inset: 31px 0 0;
+      background: #fff;
+      overflow: hidden
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    .topbar {
+      height: 55px;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 64px 1fr 64px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      position: relative;
+      z-index: 5
+    }
+
+    .topbar h1 {
+      font-size: 18px;
+      text-align: center;
+      margin: 0
+    }
+
+    .topbar button {
+      border: 0;
+      background: none;
+      padding: 8px 0;
+      font-size: 12px;
+      color: #666
+    }
+
+    .topbar .action {
+      text-align: right;
+      color: var(--red);
+      font-weight: 700
+    }
+
+    .topbar .back-arrow {
+      width: 32px;
+      height: 40px;
+      padding: 0;
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 40px;
+      text-align: left;
+      font-weight: 400
+    }
+
+    .diary-top-tabs {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 23px
+    }
+
+    .topbar .diary-top-tabs button {
+      height: 100%;
+      padding: 0 2px;
+      color: #999;
+      font-size: 16px;
+      font-weight: 500;
+      position: relative
+    }
+
+    .topbar .diary-top-tabs button.active {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    .topbar .diary-top-tabs button.active:after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 24px;
+      height: 3px;
+      background: var(--red);
+      border-radius: 2px;
+      transform: translateX(-50%)
+    }
+
+    .topbar .action.is-hidden {
+      visibility: hidden;
+      pointer-events: none
+    }
+
+    #diaryPage .page-content {
+      overflow-x: hidden;
+      touch-action: pan-y
+    }
+
+    .diary-view.slide-in-left {
+      animation: diarySlideInLeft .2s ease
+    }
+
+    .diary-view.slide-in-right {
+      animation: diarySlideInRight .2s ease
+    }
+
+    @keyframes diarySlideInLeft {
+      from { opacity: .65; transform: translateX(-24px) }
+      to { opacity: 1; transform: translateX(0) }
+    }
+
+    @keyframes diarySlideInRight {
+      from { opacity: .65; transform: translateX(24px) }
+      to { opacity: 1; transform: translateX(0) }
+    }
+
+    .page {
+      position: absolute;
+      inset: 0 0 67px;
+      overflow: hidden;
+      background: #fff
+    }
+
+    .page-content {
+      height: calc(100% - 55px);
+      overflow-y: auto;
+      scrollbar-width: none
+    }
+
+    .page-content::-webkit-scrollbar {
+      display: none
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 67px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      z-index: 20
+    }
+
+    .nav-btn {
+      border: 0;
+      background: #fff;
+      color: #919191;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 9px;
+      position: relative
+    }
+
+    .nav-btn .ico {
+      font-size: 19px;
+      line-height: 20px
+    }
+
+    .nav-btn.active {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    .nav-btn.active:after {
+      content: "";
+      position: absolute;
+      bottom: 4px;
+      width: 17px;
+      height: 2px;
+      background: var(--red);
+      border-radius: 2px
+    }
+
+    .nav-btn.publish .ico {
+      width: 36px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--red);
+      color: #fff;
+      font-size: 23px
+    }
+
+    .nav-btn .dot {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      top: 9px;
+      right: 18px
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 88px;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, .88);
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      z-index: 80;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s
+    }
+
+    .toast.show {
+      opacity: 1
+    }
+
+    .auth {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      z-index: 50;
+      overflow-y: auto
+    }
+
+    .auth-head {
+      height: 46px;
+      padding: 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .auth-head button {
+      border: 0;
+      background: none;
+      font-size: 22px
+    }
+
+    .auth-head a {
+      font-size: 11px;
+      color: #777
+    }
+
+    .auth-body {
+      padding: 34px 28px
+    }
+
+    .brand {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 28px;
+      margin-bottom: 23px
+    }
+
+    .auth h2 {
+      font-size: 24px;
+      margin: 0 0 9px
+    }
+
+    .auth-copy {
+      font-size: 12px;
+      color: #777;
+      line-height: 1.65;
+      margin: 0 0 28px
+    }
+
+    .auth-btn {
+      width: 100%;
+      height: 46px;
+      border-radius: 8px;
+      margin-bottom: 11px;
+      font-size: 13px;
+      font-weight: 700
+    }
+
+    .auth-btn.wechat {
+      border: 0;
+      background: var(--wechat);
+      color: #fff
+    }
+
+    .auth-btn.email {
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #333
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #aaa;
+      font-size: 9px;
+      margin: 16px 0
+    }
+
+    .divider:before,
+    .divider:after {
+      content: "";
+      height: 1px;
+      background: var(--line);
+      flex: 1
+    }
+
+    .agreement {
+      display: flex;
+      gap: 7px;
+      color: #888;
+      font-size: 9px;
+      line-height: 1.6;
+      margin-top: 18px
+    }
+
+    .agreement input {
+      accent-color: var(--red)
+    }
+
+    .guest-btn {
+      display: block;
+      margin: 28px auto 0;
+      border: 0;
+      background: none;
+      color: #888;
+      font-size: 10px
+    }
+
+    .auth-tabs {
+      height: 42px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px
+    }
+
+    .auth-tabs button {
+      border: 0;
+      background: #fff;
+      color: #888;
+      font-size: 13px;
+      position: relative
+    }
+
+    .auth-tabs button.active {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    .auth-tabs button.active:after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      width: 28px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--red);
+      transform: translateX(-50%)
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 14px
+    }
+
+    .field span {
+      display: block;
+      font-size: 10px;
+      color: #555;
+      margin-bottom: 6px
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0 11px;
+      outline: none;
+      background: #fff
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--red)
+    }
+
+    .password-wrap {
+      position: relative
+    }
+
+    .password-wrap input {
+      padding-right: 55px
+    }
+
+    .text-btn {
+      position: absolute;
+      right: 8px;
+      top: 7px;
+      height: 30px;
+      border: 0;
+      background: none;
+      color: #888;
+      font-size: 10px
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 102px;
+      gap: 7px
+    }
+
+    .code-btn {
+      height: 44px;
+      border: 1px solid #ffc4ce;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .primary-btn {
+      width: 100%;
+      height: 44px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--red);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 10px
+    }
+
+    .link-row {
+      display: flex;
+      justify-content: space-between;
+      color: #888;
+      font-size: 10px;
+      margin-top: -4px
+    }
+
+    .link-row button {
+      border: 0;
+      background: none;
+      color: var(--red);
+      padding: 0
+    }
+
+    .auth-tip {
+      padding: 10px;
+      background: var(--soft);
+      border-radius: 8px;
+      color: #888;
+      font-size: 9px;
+      line-height: 1.55;
+      margin-top: 15px
+    }
+
+    .home-tabs {
+      height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 43px;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 3
+    }
+
+    .home-tabs button {
+      border: 0;
+      background: none;
+      color: #888;
+      font-size: 14px;
+      height: 100%;
+      position: relative
+    }
+
+    .home-tabs button.active {
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    .home-tabs button.active:after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 22px;
+      height: 3px;
+      background: var(--red);
+      border-radius: 2px;
+      transform: translateX(-50%)
+    }
+
+    .waterfall {
+      columns: 2;
+      column-gap: 7px;
+      padding: 8px 7px 18px
+    }
+
+    .post {
+      break-inside: avoid;
+      margin-bottom: 15px;
+      cursor: pointer
+    }
+
+    .post img {
+      width: 100%;
+      display: block;
+      border-radius: 7px;
+      object-fit: cover;
+      background: #ddd
+    }
+
+    .post h3 {
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 7px 3px 6px
+    }
+
+    .post-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      margin: 0 3px 2px;
+      color: #888;
+      font-size: 10px
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex: 1
+    }
+
+    .post-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .post-like {
+      flex: 0 0 auto;
+      color: #777;
+      white-space: nowrap
+    }
+
+    .avatar {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(0, 0, 0, .06)
+    }
+
+    .date-row {
+      padding: 15px 16px 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end
+    }
+
+    .date-row b {
+      font-size: 27px
+    }
+
+    .date-row span {
+      color: #888;
+      font-size: 10px
+    }
+
+    .diary-entry {
+      padding: 10px 16px 15px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .entry-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px
+    }
+
+    .tag {
+      padding: 4px 7px;
+      border-radius: 4px;
+      background: #edf8f2;
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .privacy {
+      font-size: 10px;
+      color: #aaa
+    }
+
+    .diary-entry h3 {
+      font-size: 16px;
+      margin: 0 0 6px
+    }
+
+    .diary-entry p {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #444;
+      margin: 0 0 9px
+    }
+
+    .entry-images {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px
+    }
+
+    .entry-images img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 5px
+    }
+
+    .entry-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 9px
+    }
+
+    .entry-actions button {
+      border: 0;
+      background: none;
+      color: #777;
+      font-size: 10px
+    }
+
+    .summary {
+      margin: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .summary b {
+      display: block;
+      font-size: 17px
+    }
+
+    .summary span {
+      font-size: 10px;
+      color: #777
+    }
+
+    .progress {
+      height: 6px;
+      background: #ececec;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px
+    }
+
+    .progress i {
+      display: block;
+      height: 100%;
+      background: var(--red);
+      transition: width .25s
+    }
+
+    .habit-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 7px 10px
+    }
+
+    .checkin-overview {
+      margin: 14px 8px 14px;
+      padding: 20px 24px 18px;
+      border-radius: 8px;
+      background: #151515;
+      color: #fff
+    }
+
+    .checkin-overview-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between
+    }
+
+    .checkin-overview b {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 5px
+    }
+
+    .checkin-overview span {
+      color: #b7b7bd;
+      font-size: 10px
+    }
+
+    .checkin-overview strong {
+      color: var(--red);
+      font-size: 27px;
+      line-height: 1;
+      transform: rotate(-4deg)
+    }
+
+    .checkin-overview .progress {
+      height: 7px;
+      margin-top: 17px;
+      background: #45454d
+    }
+
+    .habit-section-head h2 {
+      margin: 0;
+      font-size: 15px
+    }
+
+    .habit-section-head span {
+      color: #aaa;
+      font-size: 10px
+    }
+
+    .habit-list {
+      padding: 0 7px 20px
+    }
+
+    .create-habit-inline {
+      width: calc(100% - 14px);
+      height: 62px;
+      margin: 2px 7px 24px;
+      border: 1px dashed #d4d4da;
+      border-radius: 8px;
+      background: #fff;
+      color: #676774;
+      font-size: 13px;
+      font-weight: 600
+    }
+
+    .create-habit-inline:active {
+      background: #f7f7f8;
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .habit-swipe {
+      position: relative;
+      overflow: hidden;
+      min-height: 82px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: var(--red);
+      touch-action: pan-y
+    }
+
+    .habit-delete {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 82px;
+      border: 0;
+      background: var(--red);
+      color: #fff;
+      font-size: 19px;
+      z-index: 0
+    }
+
+    .habit-delete span {
+      display: block;
+      margin-top: 3px;
+      font-size: 9px
+    }
+
+    .habit {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 50px 1fr 32px;
+      gap: 14px;
+      align-items: center;
+      min-height: 82px;
+      padding: 11px 14px;
+      border: 1px solid #ededed;
+      border-right-color: #ffb7c2;
+      border-radius: 8px;
+      background: #fff;
+      text-align: left;
+      position: relative;
+      z-index: 1;
+      transition: transform .18s ease
+    }
+
+    .habit-swipe.open .habit {
+      transform: translateX(-82px)
+    }
+
+    .habit-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      background: #ffe2e6;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700
+    }
+
+    .habit-swipe:nth-child(2) .habit-icon {
+      background: #fff0bf;
+      color: #c36200
+    }
+
+    .habit-swipe:nth-child(3) .habit-icon {
+      background: #e0f3ff;
+      color: #0070ad
+    }
+
+    .habit-swipe:nth-child(4) .habit-icon {
+      background: #eee8ff;
+      color: #5b2ed1
+    }
+
+    .habit h3 {
+      font-size: 14px;
+      margin: 0 0 3px
+    }
+
+    .habit.done h3 {
+      color: #999;
+      text-decoration: line-through
+    }
+
+    .habit p {
+      font-size: 10px;
+      color: #888;
+      margin: 0
+    }
+
+    .habit-check {
+      width: 29px;
+      height: 29px;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa
+    }
+
+    .habit.done .habit-check {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff
+    }
+
+    .habit-empty {
+      margin: 30px 0;
+      padding: 28px 20px;
+      border: 1px dashed #d9d9d9;
+      border-radius: 8px;
+      color: #777;
+      text-align: center
+    }
+
+    .habit-empty strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-size: 13px
+    }
+
+    .habit-empty span {
+      font-size: 10px
+    }
+
+    .calendar-content {
+      padding-bottom: 28px
+    }
+
+    .calendar-month-bar {
+      height: 62px;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 40px 1fr 40px;
+      align-items: center
+    }
+
+    .calendar-month-bar button {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--soft);
+      color: #444;
+      font-size: 20px
+    }
+
+    .calendar-month-bar strong {
+      text-align: center;
+      font-size: 17px
+    }
+
+    .calendar-summary {
+      margin: 0 16px 14px;
+      padding: 11px 13px;
+      border-left: 3px solid var(--green);
+      background: #f3faf6;
+      color: #52705f;
+      font-size: 10px;
+      line-height: 1.5
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 0 12px
+    }
+
+    .calendar-weekdays span {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 9px
+    }
+
+    .calendar-grid {
+      row-gap: 4px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .calendar-spacer,
+    .calendar-day {
+      aspect-ratio: 1;
+      min-width: 0
+    }
+
+    .calendar-day {
+      position: relative;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      color: #333;
+      font-size: 11px
+    }
+
+    .calendar-day.has-record::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 5px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--green);
+      transform: translateX(-50%)
+    }
+
+    .calendar-day.selected {
+      background: var(--red);
+      color: #fff;
+      font-weight: 700
+    }
+
+    .calendar-day.selected::after {
+      background: #fff
+    }
+
+    .calendar-day.today:not(.selected) {
+      box-shadow: inset 0 0 0 1px var(--red);
+      color: var(--red)
+    }
+
+    .calendar-review {
+      padding: 18px 16px 0
+    }
+
+    .calendar-review-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 13px
+    }
+
+    .calendar-review-head strong {
+      font-size: 15px
+    }
+
+    .calendar-review-head span {
+      color: #999;
+      font-size: 9px
+    }
+
+    .calendar-record {
+      padding: 13px 0 13px 12px;
+      border-left: 2px solid #d9eee2;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .calendar-record .tag {
+      display: inline-block;
+      margin-bottom: 7px
+    }
+
+    .calendar-record h3 {
+      margin: 0 0 5px;
+      font-size: 14px
+    }
+
+    .calendar-record p {
+      margin: 0;
+      color: #666;
+      font-size: 10px;
+      line-height: 1.55
+    }
+
+    .calendar-empty {
+      padding: 34px 18px;
+      color: #888;
+      text-align: center
+    }
+
+    .calendar-empty strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #444;
+      font-size: 13px
+    }
+
+    .calendar-empty span {
+      font-size: 10px
+    }
+
+    .subpage {
+      inset: 0;
+      z-index: 25;
+      background: #fff
+    }
+
+    .habit-form {
+      padding: 18px 16px
+    }
+
+    .form-section {
+      padding: 0 0 18px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .form-section h2 {
+      font-size: 13px;
+      margin: 0 0 13px
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 15px
+    }
+
+    .form-label>span {
+      display: block;
+      margin-bottom: 7px;
+      color: #555;
+      font-size: 10px
+    }
+
+    .form-control {
+      width: 100%;
+      height: 44px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0 11px;
+      background: #fff;
+      outline: none
+    }
+
+    .form-control:focus {
+      border-color: var(--red)
+    }
+
+    .form-help {
+      margin: -7px 0 0;
+      color: #999;
+      font-size: 9px;
+      line-height: 1.5
+    }
+
+    .habit-preview {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 11px;
+      align-items: center;
+      padding: 12px;
+      background: var(--soft);
+      border-radius: 8px
+    }
+
+    .habit-preview-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #edf8f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px
+    }
+
+    .habit-preview b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px
+    }
+
+    .habit-preview span {
+      color: #888;
+      font-size: 9px
+    }
+
+    .composer {
+      padding: 15px 16px
+    }
+
+    .composer input.title {
+      width: 100%;
+      height: 46px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      outline: none;
+      font-size: 16px
+    }
+
+    .composer textarea {
+      width: 100%;
+      height: 115px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 13px 0;
+      resize: none;
+      outline: none;
+      font-size: 13px
+    }
+
+    .image-picks {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 13px 0
+    }
+
+    .image-pick {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 6px;
+      background: var(--soft);
+      color: #999;
+      font-size: 20px
+    }
+
+    .setting-row {
+      width: 100%;
+      height: 48px;
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px
+    }
+
+    .setting-row select {
+      border: 0;
+      color: #888;
+      text-align: right;
+      background: #fff
+    }
+
+    .publish-submit {
+      width: 100%;
+      height: 43px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--red);
+      color: #fff;
+      font-weight: 700
+    }
+
+    .publish-note {
+      text-align: center;
+      color: #aaa;
+      font-size: 9px;
+      margin-top: 8px
+    }
+
+    .message-filters {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: center
+    }
+
+    .filter {
+      border: 0;
+      background: #fff;
+      color: #666;
+      font-size: 9px
+    }
+
+    .filter i {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #fff1f3;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: normal;
+      font-size: 16px;
+      margin: 0 auto 7px
+    }
+
+    .message-list {
+      padding: 0 15px
+    }
+
+    .message {
+      display: grid;
+      grid-template-columns: 45px 1fr 44px;
+      gap: 10px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .message img,
+    .system-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .system-icon {
+      border-radius: 10px;
+      background: #eef4ff;
+      color: #4d77b8;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .message h3 {
+      font-size: 13px;
+      margin: 0 0 4px
+    }
+
+    .message p {
+      font-size: 10px;
+      line-height: 1.45;
+      color: #888;
+      margin: 0
+    }
+
+    .message time {
+      font-size: 9px;
+      color: #aaa;
+      text-align: right
+    }
+
+    .profile {
+      padding: 11px 16px 14px
+    }
+
+    .profile-top {
+      display: grid;
+      grid-template-columns: 62px 1fr 54px;
+      gap: 12px;
+      align-items: center
+    }
+
+    .profile-top img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .profile h2 {
+      font-size: 17px;
+      margin: 0 0 4px
+    }
+
+    .profile p {
+      font-size: 10px;
+      color: #777;
+      margin: 0
+    }
+
+    .edit-profile {
+      height: 31px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 9px
+    }
+
+    .bio {
+      font-size: 11px;
+      color: #444;
+      margin-top: 12px
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 12px 7px;
+      text-align: center;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .metrics b {
+      display: block;
+      font-size: 14px
+    }
+
+    .metrics span {
+      font-size: 8px;
+      color: #888
+    }
+
+    .profile-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      height: 42px;
+      align-items: center;
+      text-align: center;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+      color: #888
+    }
+
+    .profile-tabs button {
+      height: 100%;
+      border: 0;
+      background: #fff;
+      color: #888
+    }
+
+    .profile-tabs button.active {
+      color: var(--ink);
+      font-weight: 700;
+      border-bottom: 3px solid var(--red)
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px
+    }
+
+    .profile-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover
+    }
+
+    .profile-settings {
+      padding: 14px
+    }
+
+    .logout {
+      width: 100%;
+      height: 42px;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 8px;
+      color: var(--red)
+    }
+
+    .profile-edit-form {
+      padding: 18px 16px 30px
+    }
+
+    .avatar-editor {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0 24px
+    }
+
+    .avatar-editor img {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--line)
+    }
+
+    .avatar-editor button {
+      height: 32px;
+      padding: 0 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #444;
+      font-size: 10px
+    }
+
+    .profile-textarea {
+      width: 100%;
+      height: 92px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 11px;
+      resize: none;
+      outline: none;
+      line-height: 1.55
+    }
+
+    .profile-textarea:focus {
+      border-color: var(--red)
+    }
+
+    .field-counter {
+      display: block;
+      margin-top: 5px;
+      color: #999;
+      font-size: 9px;
+      text-align: right
+    }
+
+    .detail-page {
+      z-index: 40
+    }
+
+    .detail-author-bar {
+      height: 58px;
+      padding: 0 14px;
+      display: grid;
+      grid-template-columns: 30px 34px 1fr auto 30px;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: #fff
+    }
+
+    .detail-back,
+    .detail-share {
+      width: 30px;
+      height: 34px;
+      border: 0;
+      background: #fff;
+      color: #333;
+      font-size: 22px
+    }
+
+    .detail-share {
+      font-size: 17px
+    }
+
+    .detail-author-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .detail-author-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .follow-btn {
+      height: 30px;
+      min-width: 58px;
+      padding: 0 13px;
+      border: 1px solid var(--red);
+      border-radius: 16px;
+      background: #fff;
+      color: var(--red);
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .follow-btn.following {
+      border-color: #ddd;
+      color: #777
+    }
+
+    .detail-scroll {
+      height: calc(100% - 118px);
+      overflow-y: auto;
+      padding-bottom: 20px;
+      scrollbar-width: none
+    }
+
+    .detail-scroll::-webkit-scrollbar {
+      display: none
+    }
+
+    .detail-hero {
+      width: 100%;
+      max-height: 430px;
+      display: block;
+      object-fit: cover;
+      background: #eee
+    }
+
+    .detail-copy {
+      padding: 16px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .detail-copy h1 {
+      margin: 10px 0 8px;
+      font-size: 18px;
+      line-height: 1.45
+    }
+
+    .detail-copy p {
+      margin: 0;
+      color: #444;
+      font-size: 12px;
+      line-height: 1.75
+    }
+
+    .detail-meta {
+      margin-top: 13px;
+      color: #999;
+      font-size: 9px
+    }
+
+    .comments-section {
+      padding: 16px 14px 28px
+    }
+
+    .comments-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px
+    }
+
+    .comments-head strong {
+      font-size: 14px
+    }
+
+    .comments-head button {
+      border: 0;
+      background: #fff;
+      color: #777;
+      font-size: 10px
+    }
+
+    .comment-item {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 9px;
+      margin-bottom: 20px
+    }
+
+    .comment-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .comment-name {
+      color: #929292;
+      font-size: 10px;
+      line-height: 1.4
+    }
+
+    .comment-text {
+      margin: 4px 0 5px;
+      color: #2d2d2d;
+      font-size: 12px;
+      line-height: 1.55
+    }
+
+    .comment-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #999;
+      font-size: 9px
+    }
+
+    .comment-tools button {
+      border: 0;
+      background: #fff;
+      color: #777;
+      padding: 0;
+      font-size: 9px
+    }
+
+    .comment-like {
+      margin-left: auto !important
+    }
+
+    .comment-like.liked {
+      color: var(--red)
+    }
+
+    .reply-list {
+      margin-top: 10px;
+      padding-left: 10px;
+      border-left: 2px solid #f0f0f0
+    }
+
+    .reply {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 7px;
+      margin-bottom: 11px
+    }
+
+    .reply img {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .reply p {
+      margin: 2px 0 4px;
+      color: #444;
+      font-size: 10px;
+      line-height: 1.5
+    }
+
+    .reply-target {
+      color: #426c9c
+    }
+
+    .expand-replies {
+      border: 0;
+      background: #fff;
+      color: #666;
+      padding: 2px 0;
+      font-size: 10px
+    }
+
+    .detail-bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 60px;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 11px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      z-index: 3
+    }
+
+    .comment-input {
+      width: 100%;
+      height: 38px;
+      border: 0;
+      border-radius: 19px;
+      background: var(--soft);
+      padding: 0 13px;
+      outline: none;
+      font-size: 11px
+    }
+
+    .detail-action {
+      min-width: 38px;
+      border: 0;
+      background: #fff;
+      color: #333;
+      font-size: 10px;
+      text-align: center
+    }
+
+    .detail-action i {
+      display: block;
+      margin-bottom: 2px;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 20px
+    }
+
+    .detail-action.active {
+      color: var(--red)
+    }
+
+    @media(max-width:480px) {
+      body {
+        padding: 0;
+        background: #fff
+      }
+
+      .device {
+        width: 100vw;
+        height: 100vh;
+        min-height: 600px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="device" aria-label="日迹交互原型">
+    <div class="status"><span>09:41</span><span>微信小程序 ···</span></div>
+    <div class="screen">
+      <section id="auth" class="auth">
+        <div id="authChoice">
+          <div class="auth-head"><button type="button" onclick="closeAuth()">×</button><a>帮助</a></div>
+          <div class="auth-body">
+            <div class="brand">日</div>
+            <h2>登录并保存你的成长</h2>
+            <p class="auth-copy">同步日记、打卡进度、关注与收藏内容。</p><button class="auth-btn wechat" type="button"
+              onclick="simulateLogin('微信')">微信一键登录</button>
+            <div class="divider">其他登录方式</div><button class="auth-btn email" type="button"
+              onclick="openEmail('password')">邮箱登录</button><label class="agreement"><input id="agreement"
+                type="checkbox" checked><span>我已阅读并同意《用户协议》与《隐私政策》。</span></label><button class="guest-btn"
+              type="button" onclick="guestBrowse()">暂不登录，仅浏览公开内容</button>
+          </div>
+        </div>
+        <div id="emailAuth" class="hidden">
+          <div class="auth-head"><button type="button" onclick="backToChoice()">‹</button><a
+              onclick="toast('注册流程使用邮箱验证码验证')">注册</a></div>
+          <div class="auth-body">
+            <h2>邮箱登录</h2>
+            <p class="auth-copy">密码与验证码均可登录同一账号。</p>
+            <div class="auth-tabs"><button id="passwordTab" type="button"
+                onclick="setEmailMode('password')">密码登录</button><button id="codeTab" type="button"
+                onclick="setEmailMode('code')">验证码登录</button></div><label class="field"><span>邮箱地址</span><input
+                id="email" type="email" value="hello@example.com"></label>
+            <div id="passwordFields"><label class="field"><span>密码</span>
+                <div class="password-wrap"><input id="password" type="password" value="growth123"><button
+                    class="text-btn" type="button" onclick="togglePassword()">显示</button></div>
+              </label>
+              <div class="link-row"><button type="button" onclick="toast('请通过邮箱验证码重置密码')">忘记密码</button><button
+                  type="button" onclick="toast('邮箱验证后可创建账号')">邮箱注册</button></div>
+            </div>
+            <div id="codeFields" class="hidden"><label class="field"><span>验证码</span>
+                <div class="form-row"><input id="code" inputmode="numeric" value="123456"><button id="codeButton"
+                    class="code-btn" type="button" onclick="sendCode()">获取验证码</button></div>
+              </label></div><button class="primary-btn" type="button" onclick="simulateLogin('邮箱')">登录</button>
+            <div class="auth-tip">演示原型不会发送邮件或提交真实账号信息。</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="app" class="hidden">
+        <div id="homePage" class="page">
+          <div class="topbar"><span></span>
+            <h1>首页</h1><button id="homeAction" class="action" type="button" onclick="homeAction()">⌕ 搜索</button>
+          </div>
+          <div class="page-content">
+            <div id="discoverView" class="waterfall">
+              <article class="post" onclick="openPost(0)"><img
+                  src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=420&q=80"
+                  style="height:220px">
+                <h3>连续晨跑 30 天，我的生活发生了什么变化</h3>
+                <div class="post-meta"><span class="post-author"><img class="avatar"
+                      src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80"><span
+                      class="post-author-name">夏日晚风</span></span><span class="post-like">♡ 218</span></div>
+              </article>
+              <article class="post" onclick="openPost(1)"><img
+                  src="https://images.unsplash.com/photo-1512820790803-83ca734da794d?auto=format&fit=crop&w=420&q=80"
+                  style="height:145px">
+                <h3>今晚读完了这本书</h3>
+                <div class="post-meta"><span class="post-author"><img class="avatar"
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"><span
+                      class="post-author-name">一颗青柠</span></span><span class="post-like">♡ 56</span></div>
+              </article>
+              <article class="post" onclick="openPost(2)"><img
+                  src="https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=420&q=80"
+                  style="height:185px">
+                <h3>普通的一天，也有值得记住的小事</h3>
+                <div class="post-meta"><span class="post-author"><img class="avatar"
+                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80"><span
+                      class="post-author-name">小岛来信</span></span><span class="post-like">♡ 93</span></div>
+              </article>
+              <article class="post" onclick="openPost(3)"><img
+                  src="https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=420&q=80"
+                  style="height:215px">
+                <h3>早睡第 14 天，状态真的不一样</h3>
+                <div class="post-meta"><span class="post-author"><img class="avatar"
+                      src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=80&q=80"><span
+                      class="post-author-name">林屿</span></span><span class="post-like">♡ 127</span></div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div id="diaryPage" class="page hidden">
+          <div class="topbar"><span></span>
+            <div class="diary-top-tabs" role="tablist"><button id="journalTab" class="active" type="button"
+                role="tab" onclick="switchDiaryTab('journal')">日记</button><button id="calendarTab" type="button"
+                role="tab" onclick="switchDiaryTab('calendar')">日历</button><button id="checkinTab" type="button"
+                role="tab" onclick="switchDiaryTab('checkin')">打卡</button></div><button id="diaryAction"
+              class="action is-hidden" type="button" onclick="diaryAction()">今天</button>
+          </div>
+          <div class="page-content" onpointerdown="handleDiarySwipeStart(event)"
+            onpointerup="handleDiarySwipeEnd(event)" onpointercancel="cancelDiarySwipe()">
+            <div id="journalView" class="diary-view">
+              <div class="date-row"><b>11</b><span>2026 年 7 月 · 星期六</span></div>
+              <div id="diaryList">
+                <article class="diary-entry">
+                  <div class="entry-top"><span class="tag">晨间跑步 · 第 12 次</span><span class="privacy">仅自己可见</span></div>
+                  <h3>沿着江边跑了五公里</h3>
+                  <p>比上周轻松了一点。清晨的风很舒服，想继续保持。</p>
+                  <div class="entry-images"><img
+                      src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=220&q=80"><img
+                      src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=220&q=80"><img
+                      src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=220&q=80">
+                  </div>
+                  <div class="entry-actions"><button onclick="toast('已收藏')">♡ 收藏</button><button
+                      onclick="toast('评论功能已打开')">评论</button><button onclick="toast('更多操作')">···</button></div>
+                </article>
+                <article class="diary-entry">
+                  <div class="entry-top"><span class="tag">阅读 · 连续 7 天</span><span class="privacy">公开</span></div>
+                  <h3>读完一本喜欢的书</h3>
+                  <p>认真把一件事做完，本身就很动人。</p>
+                  <div class="entry-images"><img
+                      src="https://images.unsplash.com/photo-1512820790803-83ca734da794d?auto=format&fit=crop&w=220&q=80">
+                  </div>
+                </article>
+              </div>
+            </div>
+            <div id="checkinView" class="diary-view hidden">
+              <div class="checkin-overview">
+                <div class="checkin-overview-main"><div><b id="completionText">今天完成 2 / 4</b><span>坚持不是满分，是继续</span></div>
+                  <strong id="completionPercent">50%</strong></div>
+                <div class="progress"><i id="completionBar" style="width:50%"></i></div>
+              </div>
+              <div class="habit-section-head"><h2>今日计划</h2><span>左滑查看删除操作</span></div>
+              <div id="habitList" class="habit-list">
+              <div class="habit-swipe"><button class="habit-delete" type="button" title="删除晨间跑步"
+                  onclick="confirmDeleteHabit(this)">🗑<span>删除</span></button><button class="habit done"
+                  data-done="true" onclick="toggleHabit(this)" onpointerdown="handleHabitPointerDown(event,this)"
+                  onpointermove="handleHabitPointerMove(event,this)" onpointerup="handleHabitPointerUp(event,this)"
+                  onpointercancel="handleHabitPointerCancel(this)"><span class="habit-icon">跑</span><span>
+                    <h3>晨间跑步</h3>
+                    <p>连续 12 天 · 5 km</p>
+                  </span><span class="habit-check">✓</span></button></div>
+              <div class="habit-swipe"><button class="habit-delete" type="button" title="删除阅读 30 分钟"
+                  onclick="confirmDeleteHabit(this)">🗑<span>删除</span></button><button class="habit done" data-done="true"
+                  onclick="toggleHabit(this)" onpointerdown="handleHabitPointerDown(event,this)"
+                  onpointermove="handleHabitPointerMove(event,this)" onpointerup="handleHabitPointerUp(event,this)"
+                  onpointercancel="handleHabitPointerCancel(this)"><span class="habit-icon">读</span><span>
+                    <h3>阅读 30 分钟</h3>
+                    <p>连续 7 天 · 21:00 提醒</p>
+                  </span><span class="habit-check">✓</span></button></div>
+              <div class="habit-swipe"><button class="habit-delete" type="button" title="删除喝水 6 杯"
+                  onclick="confirmDeleteHabit(this)">🗑<span>删除</span></button><button class="habit"
+                  data-done="false" onclick="toggleHabit(this)" onpointerdown="handleHabitPointerDown(event,this)"
+                  onpointermove="handleHabitPointerMove(event,this)" onpointerup="handleHabitPointerUp(event,this)"
+                  onpointercancel="handleHabitPointerCancel(this)"><span class="habit-icon">水</span><span>
+                    <h3>喝水</h3>
+                    <p>还差 2 杯 · 每天</p>
+                  </span><span class="habit-check">○</span></button></div>
+              <div class="habit-swipe"><button class="habit-delete" type="button" title="删除 23 点前睡觉"
+                  onclick="confirmDeleteHabit(this)">🗑<span>删除</span></button><button class="habit" data-done="false"
+                  onclick="toggleHabit(this)" onpointerdown="handleHabitPointerDown(event,this)"
+                  onpointermove="handleHabitPointerMove(event,this)" onpointerup="handleHabitPointerUp(event,this)"
+                  onpointercancel="handleHabitPointerCancel(this)"><span class="habit-icon">眠</span><span>
+                    <h3>23:00 前睡觉</h3>
+                    <p>连续 14 天 · 22:30 提醒</p>
+                  </span><span class="habit-check">○</span></button></div>
+                <div id="emptyHabitState" class="habit-empty hidden"><strong>还没有打卡项目</strong><span>点击下方按钮开始记录</span></div>
+              </div>
+              <button class="create-habit-inline" type="button" onclick="openCreateHabit()">＋　新建一个成长项目</button>
+            </div>
+            <div id="calendarView" class="diary-view calendar-content hidden">
+              <div class="calendar-month-bar"><button type="button" aria-label="上个月"
+                  onclick="shiftCalendarMonth(-1)">‹</button><strong id="calendarMonthTitle">2026 年 7 月</strong><button
+                  type="button" aria-label="下个月" onclick="shiftCalendarMonth(1)">›</button></div>
+              <div id="calendarSummary" class="calendar-summary">本月记录 8 天 · 完成 19 次打卡</div>
+              <div class="calendar-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+              <section class="calendar-review">
+                <div class="calendar-review-head"><strong id="calendarSelectedDate">7 月 11 日 · 星期六</strong><span
+                    id="calendarRecordCount">2 条记录</span></div>
+                <div id="calendarDayRecords"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div id="createHabitPage" class="page subpage hidden">
+          <div class="topbar"><button type="button" onclick="cancelCreateHabit()">取消</button>
+            <h1>新建打卡</h1><button class="action" type="button" onclick="saveHabit()">保存</button>
+          </div>
+          <div class="page-content habit-form">
+            <div class="form-section">
+              <h2>基本信息</h2><label class="form-label"><span>打卡名称</span><input id="habitName" class="form-control"
+                  maxlength="20" placeholder="例如：每天阅读 30 分钟" oninput="updateHabitPreview()"></label><label
+                class="form-label"><span>图标</span><select id="habitIcon" class="form-control"
+                  onchange="updateHabitPreview()">
+                  <option value="读">读 · 阅读</option>
+                  <option value="跑">跑 · 运动</option>
+                  <option value="水">水 · 饮水</option>
+                  <option value="眠">眠 · 睡眠</option>
+                  <option value="学">学 · 学习</option>
+                  <option value="心">心 · 自定义</option>
+                </select></label>
+            </div>
+            <div class="form-section">
+              <h2>打卡计划</h2><label class="form-label"><span>重复频率</span><select id="habitFrequency" class="form-control"
+                  onchange="updateHabitPreview()">
+                  <option>每天</option>
+                  <option>工作日</option>
+                  <option>每周一、三、五</option>
+                  <option>每周末</option>
+                </select></label><label class="form-label"><span>提醒时间</span><input id="habitReminder"
+                  class="form-control" type="time" value="21:00" oninput="updateHabitPreview()"></label>
+              <p class="form-help">提醒由微信小程序订阅消息能力提供，需用户单独授权。</p>
+            </div>
+            <div class="form-section">
+              <h2>预览</h2>
+              <div class="habit-preview"><span id="habitPreviewIcon" class="habit-preview-icon">书</span><span><b
+                    id="habitPreviewName">新的打卡项目</b><span id="habitPreviewMeta">每天 · 21:00 提醒</span></span></div>
+            </div><button class="primary-btn" type="button" onclick="saveHabit()">创建打卡项目</button>
+          </div>
+        </div>
+
+        <div id="publishPage" class="page hidden">
+          <div class="topbar"><button class="back-arrow" type="button" aria-label="返回上一界面"
+              onclick="cancelPublish()">‹</button>
+            <h1>发布成长</h1><button class="action" type="button" onclick="saveDraft()">存草稿</button>
+          </div>
+          <div class="page-content composer"><input id="postTitle" class="title" placeholder="添加标题会有更多赞哦"><textarea
+              id="postBody" placeholder="分享这一刻的经历和感受..."></textarea>
+            <div class="image-picks"><button class="image-pick" type="button"
+                onclick="pickImage(this)">＋</button><button class="image-pick" type="button"
+                onclick="pickImage(this)">图片</button><button class="image-pick" type="button"
+                onclick="pickImage(this)">图片</button></div>
+            <div class="setting-row"><span>成长标签</span><select id="postTag">
+                <option>不关联</option>
+                <option>晨间跑步</option>
+                <option>阅读</option>
+                <option>早睡</option>
+              </select></div>
+            <div class="setting-row"><span>谁可以看</span><select id="postPrivacy">
+                <option>仅自己</option>
+                <option>公开</option>
+                <option>关注我的人</option>
+              </select></div>
+            <div class="setting-row"><span>允许评论</span><select>
+                <option>开启</option>
+                <option>关闭</option>
+              </select></div><button class="publish-submit" type="button" onclick="publishPost()">保存日记</button>
+            <div class="publish-note">默认仅自己可见，可主动修改为公开</div>
+          </div>
+        </div>
+
+        <div id="messagesPage" class="page hidden">
+          <div class="topbar"><span></span>
+            <h1>消息</h1><button class="action" type="button" onclick="markRead()">全部已读</button>
+          </div>
+          <div class="page-content">
+            <div class="message-filters"><button class="filter" onclick="toast('筛选赞与收藏')"><i>♡</i>赞与收藏</button><button
+                class="filter" onclick="toast('筛选评论与提及')"><i>评</i>评论与提及</button><button class="filter"
+                onclick="toast('筛选新增关注')"><i>＋</i>新增关注</button></div>
+            <div class="message-list">
+              <article class="message"><img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80">
+                <div>
+                  <h3>夏日晚风</h3>
+                  <p>赞了你的记录「沿着江边跑了五公里」</p>
+                </div><time>刚刚</time>
+              </article>
+              <article class="message"><img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80">
+                <div>
+                  <h3>一颗青柠</h3>
+                  <p>评论：坚持的感觉真好，一起加油</p>
+                </div><time>10 分钟</time>
+              </article>
+              <article class="message"><img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80">
+                <div>
+                  <h3>小岛来信</h3>
+                  <p>开始关注你</p>
+                </div><time>昨天</time>
+              </article>
+              <article class="message">
+                <div class="system-icon">通</div>
+                <div>
+                  <h3>系统通知</h3>
+                  <p>你的每周成长回顾已生成</p>
+                </div><time>周一</time>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div id="profilePage" class="page hidden">
+          <div class="topbar"><span></span>
+            <h1>我</h1><button class="action" type="button" onclick="toast('主页分享卡已生成')">分享</button>
+          </div>
+          <div class="page-content">
+            <div class="profile">
+              <div class="profile-top"><img id="profileAvatar"
+                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=160&q=80">
+                <div>
+                  <h2 id="profileName">林屿</h2>
+                  <p>成长号：<span id="profileGrowthId">linyu_07</span></p>
+                </div><button class="edit-profile" onclick="openEditProfile()">编辑资料</button>
+              </div>
+              <div id="profileBio" class="bio">认真生活，也认真记录。慢慢来，会比较快。</div>
+            </div>
+            <div class="metrics">
+              <div><b>128</b><span>日记</span></div>
+              <div><b>43</b><span>连续天数</span></div>
+              <div><b>36</b><span>关注</span></div>
+              <div><b>112</b><span>获赞收藏</span></div>
+            </div>
+            <div class="profile-tabs"><button class="active" onclick="profileTab(this,'works')">公开成长</button><button
+                onclick="profileTab(this,'saved')">收藏</button><button onclick="profileTab(this,'data')">数据</button>
+            </div>
+            <div id="profileContent" class="profile-grid"><img
+                src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=220&q=80"><img
+                src="https://images.unsplash.com/photo-1512820790803-83ca734da794d?auto=format&fit=crop&w=220&q=80"><img
+                src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=220&q=80"><img
+                src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=220&q=80"><img
+                src="https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=220&q=80"><img
+                src="https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=220&q=80">
+            </div>
+            <div class="profile-settings"><button class="logout" type="button" onclick="logout()">退出当前账号</button></div>
+          </div>
+        </div>
+
+        <div id="editProfilePage" class="page subpage hidden">
+          <div class="topbar"><button type="button" onclick="cancelEditProfile()">取消</button>
+            <h1>编辑资料</h1><button class="action" type="button" onclick="saveProfile()">保存</button>
+          </div>
+          <div class="page-content profile-edit-form">
+            <div class="avatar-editor"><img id="editAvatarPreview" alt="头像预览"><button type="button"
+                onclick="document.getElementById('profileAvatarInput').click()">更换头像</button><input
+                id="profileAvatarInput" class="hidden" type="file" accept="image/*"
+                onchange="previewProfileAvatar(event)"></div>
+            <label class="form-label"><span>昵称</span><input id="editProfileName" class="form-control" maxlength="20"
+                placeholder="请输入昵称"></label>
+            <label class="form-label"><span>成长号</span><input id="editGrowthId" class="form-control" maxlength="20"
+                placeholder="4-20 位字母、数字或下划线"></label>
+            <label class="form-label"><span>个人简介</span><textarea id="editProfileBio" class="profile-textarea"
+                maxlength="80" placeholder="介绍一下自己" oninput="updateProfileBioCount()"></textarea><span
+                id="profileBioCount" class="field-counter">0 / 80</span></label>
+            <p class="form-help">成长号用于识别个人主页，修改后不会影响已发布内容和关注关系。</p>
+            <button class="primary-btn" type="button" onclick="saveProfile()">保存资料</button>
+          </div>
+        </div>
+
+        <div id="postDetailPage" class="page subpage detail-page hidden">
+          <div class="detail-author-bar"><button class="detail-back" type="button" onclick="closePost()">‹</button><img
+              id="detailAuthorAvatar" class="detail-author-avatar" alt="作者头像"><strong id="detailAuthorName"
+              class="detail-author-name"></strong><button id="detailFollowButton" class="follow-btn" type="button"
+              onclick="toggleFollow()">关注</button><button class="detail-share" type="button"
+              onclick="toast('分享卡片已生成')">↗</button></div>
+          <div class="detail-scroll">
+            <img id="detailImage" class="detail-hero" alt="日记图片">
+            <article class="detail-copy"><span id="detailTag" class="tag"></span>
+              <h1 id="detailTitle"></h1>
+              <p id="detailText"></p>
+              <div class="detail-meta"><span id="detailMeta"></span></div>
+            </article>
+            <section class="comments-section">
+              <div class="comments-head"><strong id="detailCommentCount">共 6 条评论</strong><button type="button"
+                  onclick="toast('评论已按热门排序')">热门排序 ☰</button></div>
+              <div id="detailComments">
+                <article class="comment-item"><img class="comment-avatar"
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                    alt="一颗青柠"><div><div class="comment-name">一颗青柠</div>
+                    <p class="comment-text">能坚持一个月真的很厉害，我跑到第 8 天就开始找借口了。</p>
+                    <div class="comment-tools"><span>2 小时前 · 杭州</span><button type="button"
+                        onclick="replyToComment('一颗青柠')">回复</button><button class="comment-like" type="button"
+                        onclick="toggleCommentLike(this)">♡ 32</button></div>
+                    <div class="reply-list">
+                      <div class="reply"><img
+                          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80"
+                          alt="夏日晚风"><div><div class="comment-name">夏日晚风 <span
+                              class="reply-target">回复 @一颗青柠</span></div>
+                          <p>前两周我也经常想放弃，后来只要求自己穿鞋出门，不再要求每次都跑很远。</p>
+                          <div class="comment-tools"><span>1 小时前</span><button type="button"
+                              onclick="replyToComment('夏日晚风')">回复</button><button class="comment-like" type="button"
+                              onclick="toggleCommentLike(this)">♡ 18</button></div>
+                        </div>
+                      </div>
+                      <div class="reply"><img
+                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
+                          alt="一颗青柠"><div><div class="comment-name">一颗青柠 <span
+                              class="reply-target">回复 @夏日晚风</span></div>
+                          <p>这个方法很好，我明天就从穿鞋出门开始。</p>
+                          <div class="comment-tools"><span>48 分钟前</span><button type="button"
+                              onclick="replyToComment('一颗青柠')">回复</button><button class="comment-like" type="button"
+                              onclick="toggleCommentLike(this)">♡ 7</button></div>
+                        </div>
+                      </div><button class="expand-replies" type="button" onclick="toast('已展开全部回复')">展开 3 条回复
+                        ›</button>
+                    </div>
+                  </div>
+                </article>
+                <article class="comment-item"><img class="comment-avatar"
+                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80"
+                    alt="小岛来信"><div><div class="comment-name">小岛来信</div>
+                    <p class="comment-text">清晨的城市确实有另一种样子。你一般几点出发？</p>
+                    <div class="comment-tools"><span>昨天 · 上海</span><button type="button"
+                        onclick="replyToComment('小岛来信')">回复</button><button class="comment-like" type="button"
+                        onclick="toggleCommentLike(this)">♡ 15</button></div>
+                    <div class="reply-list">
+                      <div class="reply"><img
+                          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80"
+                          alt="夏日晚风"><div><div class="comment-name">夏日晚风 <span
+                              class="reply-target">回复 @小岛来信</span></div>
+                          <p>工作日大约 6:30，周末会晚半小时。</p>
+                          <div class="comment-tools"><span>昨天</span><button type="button"
+                              onclick="replyToComment('夏日晚风')">回复</button><button class="comment-like" type="button"
+                              onclick="toggleCommentLike(this)">♡ 9</button></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+                <article class="comment-item"><img class="comment-avatar"
+                    src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80"
+                    alt="林屿"><div><div class="comment-name">林屿</div>
+                    <p class="comment-text">看到真实的过程比只看结果更有力量，收藏了。</p>
+                    <div class="comment-tools"><span>2 天前 · 北京</span><button type="button"
+                        onclick="replyToComment('林屿')">回复</button><button class="comment-like" type="button"
+                        onclick="toggleCommentLike(this)">♡ 21</button></div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+          <div class="detail-bottom"><input id="detailCommentInput" class="comment-input" maxlength="500"
+              placeholder="说点什么..." onkeydown="if(event.key==='Enter') submitComment()"><button id="detailLikeButton"
+              class="detail-action" type="button" onclick="toggleLike()"><i>♡</i><span
+                id="detailLikeCount">218</span></button><button id="detailFavoriteButton" class="detail-action"
+              type="button" onclick="toggleFavorite()"><i>☆</i><span id="detailFavoriteCount">46</span></button><button
+              class="detail-action" type="button" onclick="focusCommentInput()"><i>◌</i><span
+                id="detailBottomCommentCount">6</span></button></div>
+        </div>
+
+        <nav class="bottom-nav" aria-label="主导航"><button class="nav-btn active" data-page="home"
+            onclick="goPage('home')"><span class="ico">⌂</span>首页</button><button class="nav-btn" data-page="diary"
+            onclick="openDiary()"><span class="ico">▤</span>日记</button><button class="nav-btn publish"
+            data-page="publish" onclick="openPublish()"><span class="ico">＋</span>发布</button><button class="nav-btn"
+            data-page="messages" onclick="goPage('messages')"><span class="ico">♢</span>消息<span id="messageDot"
+              class="dot"></span></button><button class="nav-btn" data-page="profile" onclick="goPage('profile')"><span
+              class="ico">○</span>我</button></nav>
+      </section>
+
+      <div id="toast" class="toast">操作成功</div>
+    </div>
+  </main>
+  <script>
+    let currentDiaryTab = 'journal'; let publishReturnPage = 'home'; let diarySwipeState = null; let emailMode = 'password'; let liked = false; let favorited = false; let followed = false; let currentPostIndex = 0; let toastTimer; let editAvatarData = ''; let habitSwipeState = null; let calendarCursor = new Date(2026, 6, 1); let selectedCalendarDate = '2026-07-11';
+    const posts = [
+      { title: '连续晨跑 30 天，我的生活发生了什么变化', text: '起初只是想让自己早起，后来慢慢喜欢上清晨安静的街道。重要的不是速度，而是每天都愿意出发。', image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=85', author: '夏日晚风', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80', tag: '晨间跑步 · 连续 30 天', meta: '昨天 08:20 · 上海', likes: 218, favorites: 46, comments: 6 },
+      { title: '今晚读完了这本书', text: '普通人认真把一件事做完，本身就很动人。把今天的感受记下来，留给未来的自己。', image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794d?auto=format&fit=crop&w=800&q=85', author: '一颗青柠', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80', tag: '阅读 · 连续 7 天', meta: '昨天 22:16 · 杭州', likes: 56, favorites: 18, comments: 6 },
+      { title: '普通的一天，也有值得记住的小事', text: '吃了一顿喜欢的早餐，走了一条没走过的路。生活的质感藏在这些小事里。', image: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=800&q=85', author: '小岛来信', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80', tag: '生活记录 · 第 28 次', meta: '3 小时前 · 厦门', likes: 93, favorites: 25, comments: 6 },
+      { title: '早睡第 14 天，状态真的不一样', text: '不追求每天完美，只想在可控的范围里照顾好自己。今天也继续。', image: 'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=800&q=85', author: '林屿', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80', tag: '早睡 · 连续 14 天', meta: '今天 07:10 · 北京', likes: 127, favorites: 39, comments: 6 }
+    ];
+    const calendarEntries = {
+      '2026-07-01': [{ tag: '阅读 · 连续 2 天', title: '重新开始读书计划', text: '睡前读了 30 分钟，先从容易坚持的节奏开始。' }],
+      '2026-07-03': [{ tag: '喝水 · 第 8 次', title: '今天完成了饮水目标', text: '下午不再靠咖啡提神，状态比想象中稳定。' }],
+      '2026-07-04': [{ tag: '周末散步 · 第 3 次', title: '沿着山路走了一小时', text: '没有追求速度，只想认真看看一路的风景。' }],
+      '2026-07-07': [{ tag: '早睡 · 连续 5 天', title: '提前放下手机的一晚', text: '23 点前关灯，第二天醒来轻松了很多。' }],
+      '2026-07-09': [{ tag: '阅读 · 连续 6 天', title: '读到很喜欢的一段话', text: '把触动自己的句子记下来，留给以后回看。' }],
+      '2026-07-11': [{ tag: '晨间跑步 · 第 12 次', title: '沿着江边跑了五公里', text: '比上周轻松了一点。清晨的风很舒服，想继续保持。' }, { tag: '阅读 · 连续 7 天', title: '读完一本喜欢的书', text: '认真把一件事做完，本身就很动人。' }],
+      '2026-07-15': [{ tag: '学习 · 第 10 次', title: '完成一节在线课程', text: '把最难理解的部分重新整理成了自己的笔记。' }],
+      '2026-07-20': [{ tag: '晨间跑步 · 第 16 次', title: '今天只跑了三公里', text: '状态一般，但还是完成了出门这件事。' }]
+    };
+    const calendarMonthStats = { '2026-07': '本月记录 8 天 · 完成 19 次打卡' };
+    function toast(message) { const el = document.getElementById('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800) }
+    function ensureAgreement() { if (!document.getElementById('agreement').checked) { toast('请先同意用户协议与隐私政策'); return false } return true }
+    function simulateLogin(method) { if (!ensureAgreement()) return; document.getElementById('auth').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); toast(method + '登录成功') }
+    function guestBrowse() { document.getElementById('auth').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); goPage('home'); toast('当前为游客模式') }
+    function closeAuth() { toast('登录后才能保存成长记录') }
+    function openEmail(mode) { if (!ensureAgreement()) return; document.getElementById('authChoice').classList.add('hidden'); document.getElementById('emailAuth').classList.remove('hidden'); setEmailMode(mode) }
+    function backToChoice() { document.getElementById('emailAuth').classList.add('hidden'); document.getElementById('authChoice').classList.remove('hidden') }
+    function setEmailMode(mode) { emailMode = mode; document.getElementById('passwordTab').classList.toggle('active', mode === 'password'); document.getElementById('codeTab').classList.toggle('active', mode === 'code'); document.getElementById('passwordFields').classList.toggle('hidden', mode !== 'password'); document.getElementById('codeFields').classList.toggle('hidden', mode !== 'code') }
+    function togglePassword() { const input = document.getElementById('password'); input.type = input.type === 'password' ? 'text' : 'password' }
+    function sendCode() { const btn = document.getElementById('codeButton'); let left = 60; btn.disabled = true; btn.textContent = '60s'; toast('演示验证码：123456'); const timer = setInterval(() => { left--; btn.textContent = left + 's'; if (left <= 0) { clearInterval(timer); btn.disabled = false; btn.textContent = '重新发送' } }, 1000) }
+    function logout() { document.getElementById('app').classList.add('hidden'); document.getElementById('auth').classList.remove('hidden'); backToChoice(); goPage('home'); toast('已退出登录') }
+    function getCurrentPage() { const page = document.querySelector('.page:not(.hidden)'); return page ? page.id.replace(/Page$/, '') : 'home' }
+    function goPage(page) { document.querySelectorAll('.page').forEach(el => el.classList.add('hidden')); document.getElementById(page + 'Page').classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page)) }
+    function homeAction() { toast('搜索成长内容') }
+    function openDiary(tab = currentDiaryTab) { goPage('diary'); switchDiaryTab(tab) }
+    function openPublish() { const currentPage = getCurrentPage(); publishReturnPage = currentPage === 'publish' ? publishReturnPage : currentPage; goPage('publish') }
+    function cancelPublish() { goPage(publishReturnPage || 'home') }
+    function switchDiaryTab(tab) { const tabs = ['journal', 'calendar', 'checkin']; if (!tabs.includes(tab)) return; const previous = currentDiaryTab; currentDiaryTab = tab; tabs.forEach(name => { document.getElementById(name + 'View').classList.toggle('hidden', tab !== name); document.getElementById(name + 'Tab').classList.toggle('active', tab === name); document.getElementById(name + 'Tab').setAttribute('aria-selected', String(tab === name)) }); const action = document.getElementById('diaryAction'); action.textContent = '今天'; action.classList.toggle('is-hidden', tab !== 'calendar'); if (tab === 'calendar') renderCalendar(); if (previous !== tab) { const activeView = document.getElementById(tab + 'View'); activeView.classList.remove('slide-in-left', 'slide-in-right'); void activeView.offsetWidth; activeView.classList.add(tabs.indexOf(tab) < tabs.indexOf(previous) ? 'slide-in-left' : 'slide-in-right'); document.querySelector('#diaryPage .page-content').scrollTop = 0 } }
+    function handleDiarySwipeStart(event) { if (event.pointerType === 'mouse' && event.button !== 0) return; if (event.target.closest('.habit-swipe, button, input, textarea, select')) return; diarySwipeState = { x: event.clientX, y: event.clientY, pointerId: event.pointerId, target: event.currentTarget }; event.currentTarget.setPointerCapture?.(event.pointerId) }
+    function handleDiarySwipeEnd(event) { if (!diarySwipeState || diarySwipeState.pointerId !== event.pointerId) return; const deltaX = event.clientX - diarySwipeState.x; const deltaY = event.clientY - diarySwipeState.y; diarySwipeState.target.releasePointerCapture?.(event.pointerId); diarySwipeState = null; if (Math.abs(deltaX) < 55 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return; const tabs = ['journal', 'calendar', 'checkin']; const nextIndex = tabs.indexOf(currentDiaryTab) + (deltaX < 0 ? 1 : -1); if (nextIndex >= 0 && nextIndex < tabs.length) switchDiaryTab(tabs[nextIndex]) }
+    function cancelDiarySwipe() { diarySwipeState = null }
+    function diaryAction() { if (currentDiaryTab === 'calendar') goCalendarToday() }
+    function calendarKey(year, month, day) { return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` }
+    function openCalendar() { calendarCursor = new Date(2026, 6, 1); selectedCalendarDate = '2026-07-11'; openDiary('calendar') }
+    function goCalendarToday() { const today = new Date(2026, 6, 11); calendarCursor = new Date(today.getFullYear(), today.getMonth(), 1); selectedCalendarDate = calendarKey(today.getFullYear(), today.getMonth(), today.getDate()); renderCalendar() }
+    function shiftCalendarMonth(delta) { calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1); selectedCalendarDate = calendarKey(calendarCursor.getFullYear(), calendarCursor.getMonth(), 1); renderCalendar() }
+    function selectCalendarDay(button) { selectedCalendarDate = button.dataset.date; renderCalendar() }
+    function renderCalendar() { const year = calendarCursor.getFullYear(); const month = calendarCursor.getMonth(); const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`; document.getElementById('calendarMonthTitle').textContent = `${year} 年 ${month + 1} 月`; document.getElementById('calendarSummary').textContent = calendarMonthStats[monthKey] || '本月还没有日记或打卡记录'; const grid = document.getElementById('calendarGrid'); grid.innerHTML = ''; const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; for (let index = 0; index < firstWeekday; index++) { const spacer = document.createElement('span'); spacer.className = 'calendar-spacer'; grid.appendChild(spacer) } const daysInMonth = new Date(year, month + 1, 0).getDate(); for (let day = 1; day <= daysInMonth; day++) { const key = calendarKey(year, month, day); const button = document.createElement('button'); button.type = 'button'; button.className = 'calendar-day'; button.dataset.date = key; button.textContent = day; button.classList.toggle('has-record', Boolean(calendarEntries[key])); button.classList.toggle('selected', key === selectedCalendarDate); button.classList.toggle('today', key === '2026-07-11'); button.onclick = () => selectCalendarDay(button); grid.appendChild(button) } renderCalendarReview() }
+    function renderCalendarReview() { const [year, month, day] = selectedCalendarDate.split('-').map(Number); const date = new Date(year, month - 1, day); const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']; const records = calendarEntries[selectedCalendarDate] || []; document.getElementById('calendarSelectedDate').textContent = `${month} 月 ${day} 日 · ${weekdays[date.getDay()]}`; document.getElementById('calendarRecordCount').textContent = `${records.length} 条记录`; const container = document.getElementById('calendarDayRecords'); container.innerHTML = ''; if (!records.length) { const empty = document.createElement('div'); empty.className = 'calendar-empty'; empty.innerHTML = '<strong>这一天还没有记录</strong><span>可以从“发布”写下当天的日记</span>'; container.appendChild(empty); return } records.forEach(record => { const article = document.createElement('article'); article.className = 'calendar-record'; const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = record.tag; const title = document.createElement('h3'); title.textContent = record.title; const text = document.createElement('p'); text.textContent = record.text; article.append(tag, title, text); container.appendChild(article) }) }
+    function updateCompletion() { const all = [...document.querySelectorAll('#habitList .habit')]; const count = all.filter(item => item.dataset.done === 'true').length; const percent = all.length ? Math.round(count / all.length * 100) : 0; document.getElementById('completionText').textContent = all.length ? `今天完成 ${count} / ${all.length}` : '还没有打卡项目'; document.getElementById('completionPercent').textContent = percent + '%'; document.getElementById('completionBar').style.width = percent + '%'; document.getElementById('emptyHabitState').classList.toggle('hidden', all.length !== 0) }
+    function toggleHabit(button) { if (button.dataset.swipeIgnore === 'true') { button.dataset.swipeIgnore = 'false'; return } const done = button.dataset.done === 'true'; button.dataset.done = String(!done); button.classList.toggle('done', !done); button.querySelector('.habit-check').textContent = !done ? '✓' : '○'; updateCompletion(); toast(!done ? '打卡完成' : '已取消本次打卡') }
+    function setHabitSwipe(wrapper, open) { wrapper.classList.toggle('open', open); const habit = wrapper.querySelector('.habit'); habit.style.transition = ''; habit.style.transform = open ? 'translateX(-82px)' : '' }
+    function closeAllHabitSwipes(except) { document.querySelectorAll('#habitList .habit-swipe.open').forEach(wrapper => { if (wrapper !== except) setHabitSwipe(wrapper, false) }) }
+    function handleHabitPointerDown(event, button) { if (event.pointerType === 'mouse' && event.button !== 0) return; const wrapper = button.closest('.habit-swipe'); closeAllHabitSwipes(wrapper); habitSwipeState = { button, wrapper, startX: event.clientX, startY: event.clientY, startOffset: wrapper.classList.contains('open') ? -82 : 0, moved: false }; button.setPointerCapture?.(event.pointerId); button.style.transition = 'none' }
+    function handleHabitPointerMove(event, button) { if (!habitSwipeState || habitSwipeState.button !== button) return; const deltaX = event.clientX - habitSwipeState.startX; const deltaY = event.clientY - habitSwipeState.startY; if (!habitSwipeState.moved && Math.abs(deltaX) < 10) return; if (Math.abs(deltaX) <= Math.abs(deltaY)) return; habitSwipeState.moved = true; const offset = Math.min(0, Math.max(-82, habitSwipeState.startOffset + deltaX)); button.style.transform = `translateX(${offset}px)` }
+    function handleHabitPointerUp(event, button) { if (!habitSwipeState || habitSwipeState.button !== button) return; const state = habitSwipeState; const deltaX = event.clientX - state.startX; button.style.transition = ''; if (state.moved) { setHabitSwipe(state.wrapper, state.startOffset + deltaX < -72); button.dataset.swipeIgnore = 'true' } else if (state.wrapper.classList.contains('open')) { setHabitSwipe(state.wrapper, false); button.dataset.swipeIgnore = 'true' } habitSwipeState = null }
+    function handleHabitPointerCancel(button) { if (!habitSwipeState || habitSwipeState.button !== button) return; setHabitSwipe(habitSwipeState.wrapper, habitSwipeState.wrapper.classList.contains('open')); habitSwipeState = null }
+    function confirmDeleteHabit(deleteButton) { const wrapper = deleteButton.closest('.habit-swipe'); const name = wrapper.querySelector('h3').textContent; if (!confirm(`删除“${name}”？删除后不可恢复。`)) { setHabitSwipe(wrapper, false); return } wrapper.remove(); updateCompletion(); toast('打卡项目已删除') }
+    function buildHabitSwipeItem({ icon, name, detail, done = false }) { const wrapper = document.createElement('div'); wrapper.className = 'habit-swipe'; const deleteButton = document.createElement('button'); deleteButton.className = 'habit-delete'; deleteButton.type = 'button'; deleteButton.title = `删除${name}`; deleteButton.innerHTML = '🗑<span>删除</span>'; deleteButton.onclick = () => confirmDeleteHabit(deleteButton); const habit = document.createElement('button'); habit.className = `habit${done ? ' done' : ''}`; habit.dataset.done = String(done); habit.type = 'button'; const iconEl = document.createElement('span'); iconEl.className = 'habit-icon'; iconEl.textContent = icon; const textEl = document.createElement('span'); const title = document.createElement('h3'); title.textContent = name; const meta = document.createElement('p'); meta.textContent = detail; textEl.append(title, meta); const check = document.createElement('span'); check.className = 'habit-check'; check.textContent = done ? '✓' : '○'; habit.append(iconEl, textEl, check); habit.onclick = () => toggleHabit(habit); habit.addEventListener('pointerdown', event => handleHabitPointerDown(event, habit)); habit.addEventListener('pointermove', event => handleHabitPointerMove(event, habit)); habit.addEventListener('pointerup', event => handleHabitPointerUp(event, habit)); habit.addEventListener('pointercancel', () => handleHabitPointerCancel(habit)); wrapper.append(deleteButton, habit); return wrapper }
+    function openCreateHabit() { goPage('createHabit'); document.querySelector('#createHabitPage .page-content').scrollTop = 0; updateHabitPreview() }
+    function cancelCreateHabit() { resetHabitForm(); openDiary('checkin') }
+    function updateHabitPreview() { const name = document.getElementById('habitName').value.trim() || '新的打卡项目'; const icon = document.getElementById('habitIcon').value; const frequency = document.getElementById('habitFrequency').value; const reminder = document.getElementById('habitReminder').value || '不提醒'; document.getElementById('habitPreviewName').textContent = name; document.getElementById('habitPreviewIcon').textContent = icon; document.getElementById('habitPreviewMeta').textContent = `${frequency} · ${reminder}${reminder === '不提醒' ? '' : ' 提醒'}` }
+    function resetHabitForm() { document.getElementById('habitName').value = ''; document.getElementById('habitIcon').value = '读'; document.getElementById('habitFrequency').value = '每天'; document.getElementById('habitReminder').value = '21:00'; updateHabitPreview() }
+    function saveHabit() { const name = document.getElementById('habitName').value.trim(); if (!name) { toast('请输入打卡名称'); document.getElementById('habitName').focus(); return } const icon = document.getElementById('habitIcon').value; const frequency = document.getElementById('habitFrequency').value; const reminder = document.getElementById('habitReminder').value; document.getElementById('habitList').appendChild(buildHabitSwipeItem({ icon, name, detail: `${frequency} · ${reminder ? reminder + ' 提醒' : '不提醒'}` })); resetHabitForm(); openDiary('checkin'); updateCompletion(); toast('打卡项目已创建') }
+    function pickImage(button) { button.textContent = '已选'; button.style.background = '#fff1f3'; button.style.color = 'var(--red)'; toast('已添加演示图片') }
+    function saveDraft() { toast('草稿已保存') }
+    function publishPost() { const title = document.getElementById('postTitle').value.trim() || '今天的成长记录'; const body = document.getElementById('postBody').value.trim(); if (!body) { toast('请先填写成长内容'); return } const privacy = document.getElementById('postPrivacy').value; const tag = document.getElementById('postTag').value; const article = document.createElement('article'); article.className = 'diary-entry'; article.innerHTML = `<div class="entry-top"><span class="tag">${tag}</span><span class="privacy">${privacy}</span></div><h3>${title.replace(/[<>]/g, '')}</h3><p>${body.replace(/[<>]/g, '')}</p>`; document.getElementById('diaryList').prepend(article); document.getElementById('postTitle').value = ''; document.getElementById('postBody').value = ''; openDiary('journal'); toast('日记已保存') }
+    function markRead() { document.getElementById('messageDot').classList.add('hidden'); toast('消息已全部标记为已读') }
+    function openEditProfile() { document.getElementById('editProfileName').value = document.getElementById('profileName').textContent; document.getElementById('editGrowthId').value = document.getElementById('profileGrowthId').textContent; document.getElementById('editProfileBio').value = document.getElementById('profileBio').textContent; editAvatarData = document.getElementById('profileAvatar').src; document.getElementById('editAvatarPreview').src = editAvatarData; document.getElementById('profileAvatarInput').value = ''; goPage('editProfile'); document.querySelector('#editProfilePage .page-content').scrollTop = 0; updateProfileBioCount() }
+    function cancelEditProfile() { goPage('profile') }
+    function updateProfileBioCount() { const length = document.getElementById('editProfileBio').value.length; document.getElementById('profileBioCount').textContent = `${length} / 80` }
+    function previewProfileAvatar(event) { const file = event.target.files[0]; if (!file) return; if (!file.type.startsWith('image/')) { toast('请选择图片文件'); event.target.value = ''; return } if (file.size > 5 * 1024 * 1024) { toast('头像图片不能超过 5 MB'); event.target.value = ''; return } const reader = new FileReader(); reader.onload = () => { editAvatarData = reader.result; document.getElementById('editAvatarPreview').src = editAvatarData }; reader.readAsDataURL(file) }
+    function saveProfile() { const name = document.getElementById('editProfileName').value.trim(); const growthId = document.getElementById('editGrowthId').value.trim(); const bio = document.getElementById('editProfileBio').value.trim(); if (!name) { toast('请输入昵称'); document.getElementById('editProfileName').focus(); return } if (!/^[A-Za-z0-9_]{4,20}$/.test(growthId)) { toast('成长号需为 4-20 位字母、数字或下划线'); document.getElementById('editGrowthId').focus(); return } document.getElementById('profileName').textContent = name; document.getElementById('profileGrowthId').textContent = growthId; document.getElementById('profileBio').textContent = bio || '还没有填写个人简介'; if (editAvatarData) document.getElementById('profileAvatar').src = editAvatarData; goPage('profile'); toast('个人资料已保存') }
+    function profileTab(button, type) { document.querySelectorAll('.profile-tabs button').forEach(btn => btn.classList.remove('active')); button.classList.add('active'); const content = document.getElementById('profileContent'); if (type === 'works') { content.className = 'profile-grid'; content.innerHTML = '<img src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=220&q=80"><img src="https://images.unsplash.com/photo-1512820790803-83ca734da794d?auto=format&fit=crop&w=220&q=80"><img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=220&q=80">' } else { content.className = 'profile-settings'; content.innerHTML = `<div class="auth-tip">${type === 'saved' ? '已收藏 24 条公开成长记录。' : '本月记录 18 天，完成打卡 32 次，最长连续 43 天。'}</div>` } }
+    function openPost(index) { const post = posts[index]; currentPostIndex = index; liked = false; favorited = false; followed = false; document.getElementById('detailImage').src = post.image; document.getElementById('detailTitle').textContent = post.title; document.getElementById('detailText').textContent = post.text; document.getElementById('detailAuthorName').textContent = post.author; document.getElementById('detailAuthorAvatar').src = post.avatar; document.getElementById('detailTag').textContent = post.tag; document.getElementById('detailMeta').textContent = post.meta; document.getElementById('detailLikeCount').textContent = post.likes; document.getElementById('detailFavoriteCount').textContent = post.favorites; document.getElementById('detailBottomCommentCount').textContent = post.comments; document.getElementById('detailCommentCount').textContent = `共 ${post.comments} 条评论`; document.getElementById('detailLikeButton').classList.remove('active'); document.getElementById('detailLikeButton').querySelector('i').textContent = '♡'; document.getElementById('detailFavoriteButton').classList.remove('active'); document.getElementById('detailFavoriteButton').querySelector('i').textContent = '☆'; document.getElementById('detailFollowButton').classList.remove('following'); document.getElementById('detailFollowButton').textContent = '关注'; document.getElementById('detailCommentInput').value = ''; goPage('postDetail'); document.querySelector('#postDetailPage .detail-scroll').scrollTop = 0 }
+    function closePost() { goPage('home') }
+    function toggleFollow() { followed = !followed; const button = document.getElementById('detailFollowButton'); button.textContent = followed ? '已关注' : '关注'; button.classList.toggle('following', followed); toast(followed ? '已关注该用户' : '已取消关注') }
+    function toggleLike() { liked = !liked; const post = posts[currentPostIndex]; const button = document.getElementById('detailLikeButton'); button.classList.toggle('active', liked); button.querySelector('i').textContent = liked ? '♥' : '♡'; document.getElementById('detailLikeCount').textContent = post.likes + (liked ? 1 : 0) }
+    function toggleFavorite() { favorited = !favorited; const post = posts[currentPostIndex]; const button = document.getElementById('detailFavoriteButton'); button.classList.toggle('active', favorited); button.querySelector('i').textContent = favorited ? '★' : '☆'; document.getElementById('detailFavoriteCount').textContent = post.favorites + (favorited ? 1 : 0) }
+    function focusCommentInput() { document.getElementById('detailCommentInput').focus() }
+    function replyToComment(name) { const input = document.getElementById('detailCommentInput'); input.value = `回复 @${name}：`; input.focus() }
+    function toggleCommentLike(button) { const match = button.textContent.match(/(\d+)/); const count = match ? Number(match[1]) : 0; const active = button.classList.toggle('liked'); button.textContent = `${active ? '♥' : '♡'} ${count + (active ? 1 : -1)}` }
+    function submitComment() { const input = document.getElementById('detailCommentInput'); const text = input.value.trim(); if (!text) { toast('请输入评论内容'); return } const article = document.createElement('article'); article.className = 'comment-item'; const avatar = document.createElement('img'); avatar.className = 'comment-avatar'; avatar.src = document.getElementById('profileAvatar').src; avatar.alt = document.getElementById('profileName').textContent; const content = document.createElement('div'); const name = document.createElement('div'); name.className = 'comment-name'; name.textContent = document.getElementById('profileName').textContent; const body = document.createElement('p'); body.className = 'comment-text'; body.textContent = text; const tools = document.createElement('div'); tools.className = 'comment-tools'; tools.innerHTML = '<span>刚刚</span><button type="button">回复</button><button class="comment-like" type="button">♡ 0</button>'; tools.querySelectorAll('button')[0].onclick = () => replyToComment(document.getElementById('profileName').textContent); tools.querySelectorAll('button')[1].onclick = event => toggleCommentLike(event.currentTarget); content.append(name, body, tools); article.append(avatar, content); document.getElementById('detailComments').prepend(article); input.value = ''; const post = posts[currentPostIndex]; post.comments += 1; document.getElementById('detailCommentCount').textContent = `共 ${post.comments} 条评论`; document.getElementById('detailBottomCommentCount').textContent = post.comments; toast('评论已发布') }
+  </script>
+</body>
+
+</html>
